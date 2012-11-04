@@ -28,6 +28,7 @@
 #include "ext/standard/info.h"
 #include "php_vgtrk_br.h"
 #include <sys/time.h>
+#include "SAPI.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(vgtrk_br)
 
@@ -186,13 +187,20 @@ void vgtrk_error_cb (int type, const char* filename, const uint error_lineno, co
 
 	if (VGTRK_BR_G(paranoia_enabled) && (type == E_WARNING || type == E_USER_WARNING || type == E_USER_ERROR || type == E_USER_ERROR)){
 		char host[255];
+		char web_info[512]="";
+		if (strncmp(sapi_module.name,"apache",5)==0){
+			char* hostname = sapi_getenv("HTTP_HOST", 512 TSRMLS_CC);
+			char* uri = sapi_getenv("REQUEST_URI", 512 TSRMLS_CC);
+			char* reqid = sapi_getenv("HTTP_X_REQUEST_ID", 512 TSRMLS_CC);
+			spprintf(&web_info,512,"%s    %s    %s",reqid,hostname,uri);
+		}
 		gethostname(host,255);
 		struct timeval tv;
 		gettimeofday(&tv,NULL);
 		err_buffer = emalloc(PG(log_errors_max_len));
 		buffer_len = vspprintf(&err_buffer,PG(log_errors_max_len),format,args);
 		out_buffer = emalloc(buffer_len+1024);
-		spprintf(&out_buffer,buffer_len+1024,"%s    %d    %d    %s    %d    %s",host,tv.tv_sec,type,filename,error_lineno,err_buffer);
+		spprintf(&out_buffer,buffer_len+1024,"%s    %d    %d    %s    %d    %s    %s",host,tv.tv_sec,type,filename,error_lineno,err_buffer,web_info);
 		printf("%s",out_buffer);
 		efree(err_buffer);
 		efree(out_buffer);
