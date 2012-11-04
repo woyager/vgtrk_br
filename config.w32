@@ -1,0 +1,13 @@
+// $Id$
+// vim:ft=javascript
+
+// If your extension references something external, use ARG_WITH
+// ARG_WITH("vgtrk_br", "for vgtrk_br support", "no");
+
+// Otherwise, use ARG_ENABLE
+// ARG_ENABLE("vgtrk_br", "enable vgtrk_br support", "no");
+
+if (PHP_VGTRK_BR != "no") {
+	EXTENSION("vgtrk_br", "vgtrk_br.c");
+}
+
