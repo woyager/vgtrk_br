@@ -188,7 +188,6 @@ void vgtrk_error_cb (int type, const char* filename, const uint error_lineno, co
 	char * err_buffer;
 	char * out_buffer;
 	int buffer_len;
-	char space[256]="test";
 	TSRMLS_FETCH();
 
 	if (VGTRK_BR_G(paranoia_enabled) && (type | E_ALL )){
@@ -206,7 +205,7 @@ void vgtrk_error_cb (int type, const char* filename, const uint error_lineno, co
 		err_buffer = emalloc(PG(log_errors_max_len));
 		buffer_len = vspprintf(&err_buffer,PG(log_errors_max_len),format,args);
 		out_buffer = emalloc(buffer_len+1024);
-		spprintf(&out_buffer,buffer_len+1024,"%s    %d    %d    %s    %s    %d    %s    %s    %s    %s",host,tv.tv_sec,type,sapi_module.name,filename,error_lineno,get_active_class_name(&space),get_active_function_name(),err_buffer,web_info);
+		spprintf(&out_buffer,buffer_len+1024,"%s    %d    %d    %s    %s    %d    %s    %s    %s    %s",host,tv.tv_sec,type,sapi_module.name,filename,error_lineno,get_active_class_name(NULL),get_active_function_name(),err_buffer,web_info);
 //		printf("%s",out_buffer);
 		sendto(VGTRK_BR_G(sockfd),out_buffer,strlen(out_buffer),0,(struct sockaddr *)&VGTRK_BR_G(servaddr),sizeof(VGTRK_BR_G(servaddr)));
 		efree(err_buffer);
