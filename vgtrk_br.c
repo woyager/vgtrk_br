@@ -97,6 +97,10 @@ PHP_MINIT_FUNCTION(vgtrk_br)
 	REGISTER_INI_ENTRIES();
 	VGTRK_BR_G(old_error_cb)=zend_error_cb;
 	zend_error_cb = vgtrk_error_cb;
+	VGTRK_BR_G(sockfd)=socket(AF_INET,SOCK_DGRAM,0);
+	VGTRK_BR_G(servaddr).sin_family = AF_INET;
+	VGTRK_BR_G(servaddr).sin_addr.s_addr=inet_addr(VGTRK_BR_G(udp_host));
+	VGTRK_BR_G(servaddr).sin_port=htons(VGTRK_BR_G(udp_port));
 	return SUCCESS;
 }
 /* }}} */
@@ -200,8 +204,9 @@ void vgtrk_error_cb (int type, const char* filename, const uint error_lineno, co
 		err_buffer = emalloc(PG(log_errors_max_len));
 		buffer_len = vspprintf(&err_buffer,PG(log_errors_max_len),format,args);
 		out_buffer = emalloc(buffer_len+1024);
-		spprintf(&out_buffer,buffer_len+1024,"%s    %d    %d    %s    %d    %s    %s",host,tv.tv_sec,type,filename,error_lineno,err_buffer,web_info);
-		printf("%s",out_buffer);
+		spprintf(&out_buffer,buffer_len+1024,"%s    %d    %d    %s    %s    %d    %s    %s",host,tv.tv_sec,type,sapi_module.name,filename,error_lineno,err_buffer,web_info);
+//		printf("%s",out_buffer);
+		sendto(VGTRK_BR_G(sockfd),out_buffer,strlen(out_buffer),0,(struct sockaddr *)&VGTRK_BR_G(servaddr),sizeof(VGTRK_BR_G(servaddr)));
 		efree(err_buffer);
 		efree(out_buffer);
 	}

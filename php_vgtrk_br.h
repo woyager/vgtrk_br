@@ -18,6 +18,9 @@
 
 /* $Id$ */
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+
 #ifndef PHP_VGTRK_BR_H
 #define PHP_VGTRK_BR_H
 
@@ -49,6 +52,8 @@ ZEND_BEGIN_MODULE_GLOBALS(vgtrk_br)
 	zend_bool paranoia_enabled;
 	signed long udp_port;
 	char * udp_host;
+	int sockfd;
+	struct sockaddr_in servaddr;
 ZEND_END_MODULE_GLOBALS(vgtrk_br)
 
 /* In every utility function you add that needs to use variables 
