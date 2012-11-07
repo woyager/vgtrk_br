@@ -190,7 +190,7 @@ void vgtrk_error_cb (int type, const char* filename, const uint error_lineno, co
 	int buffer_len;
 	TSRMLS_FETCH();
 
-	if (VGTRK_BR_G(paranoia_enabled) && (type | E_ALL )){
+	if (VGTRK_BR_G(paranoia_enabled)){
 		char host[255];
 		char web_info[512]="";
 		if (strncmp(sapi_module.name,"apache",5)==0){
