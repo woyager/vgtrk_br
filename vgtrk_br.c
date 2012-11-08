@@ -76,6 +76,7 @@ PHP_INI_BEGIN()
     STD_PHP_INI_ENTRY("vgtrk_br.paranoia_enabled",      "0", PHP_INI_ALL, OnUpdateBool, paranoia_enabled, zend_vgtrk_br_globals, vgtrk_br_globals)
     STD_PHP_INI_ENTRY("vgtrk_br.udp_host", "127.0.0.1", PHP_INI_ALL, OnUpdateString, udp_host, zend_vgtrk_br_globals, vgtrk_br_globals)
     STD_PHP_INI_ENTRY("vgtrk_br.udp_port","11111",PHP_INI_ALL,OnUpdateLong, udp_port, zend_vgtrk_br_globals, vgtrk_br_globals)
+    STD_PHP_INI_ENTRY("vgtrk_br.strong_paranoia",      "0", PHP_INI_ALL, OnUpdateBool, strong_paranoia, zend_vgtrk_br_globals, vgtrk_br_globals)
 PHP_INI_END()
 /* }}} */
 
@@ -120,6 +121,15 @@ PHP_MSHUTDOWN_FUNCTION(vgtrk_br)
  */
 PHP_RINIT_FUNCTION(vgtrk_br)
 {
+	VGTRK_BR_G(web_info)=emalloc(2048);
+	*VGTRK_BR_G(web_info)=0;
+	if (strncmp(sapi_module.name,"apache",5)==0){
+        	char* hostname = sapi_getenv("HTTP_HOST", 512 TSRMLS_CC);
+                char* uri = sapi_getenv("REQUEST_URI", 512 TSRMLS_CC);
+                char* reqid = sapi_getenv("HTTP_X_REQUEST_ID", 512 TSRMLS_CC);
+                spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
+        }
+
 	return SUCCESS;
 }
 /* }}} */
@@ -129,6 +139,7 @@ PHP_RINIT_FUNCTION(vgtrk_br)
  */
 PHP_RSHUTDOWN_FUNCTION(vgtrk_br)
 {
+	efree(VGTRK_BR_G(web_info));
 	return SUCCESS;
 }
 /* }}} */
@@ -185,6 +196,13 @@ PHP_FUNCTION(confirm_vgtrk_br_compiled)
 
 void vgtrk_error_cb (int type, const char* filename, const uint error_lineno, const char* format, va_list args)
 {
+	vgtrk_sender_internal(type, filename,error_lineno, format, args);
+	VGTRK_BR_G(old_error_cb)(type,filename,error_lineno,format,args);
+	return;
+}
+
+void vgtrk_sender_internal (int type, const char* filename, const uint error_lineno, const char* format, va_list args)
+{
 	char * err_buffer;
 	char * out_buffer;
 	int buffer_len;
@@ -192,25 +210,41 @@ void vgtrk_error_cb (int type, const char* filename, const uint error_lineno, co
 
 	if (VGTRK_BR_G(paranoia_enabled)){
 		char host[255];
-		char web_info[512]="";
-		if (strncmp(sapi_module.name,"apache",5)==0){
-			char* hostname = sapi_getenv("HTTP_HOST", 512 TSRMLS_CC);
-			char* uri = sapi_getenv("REQUEST_URI", 512 TSRMLS_CC);
-			char* reqid = sapi_getenv("HTTP_X_REQUEST_ID", 512 TSRMLS_CC);
-			spprintf(&web_info,512,"%s    %s    %s",reqid,hostname,uri);
-		}
 		gethostname(host,255);
 		struct timeval tv;
 		gettimeofday(&tv,NULL);
 		err_buffer = emalloc(PG(log_errors_max_len));
 		buffer_len = vspprintf(&err_buffer,PG(log_errors_max_len),format,args);
-		out_buffer = emalloc(buffer_len+1024);
-		spprintf(&out_buffer,buffer_len+1024,"%s    %d    %d    %s    %s    %d    %s    %s    %s    %s",host,tv.tv_sec,type,sapi_module.name,filename,error_lineno,get_active_class_name(NULL),get_active_function_name(),err_buffer,web_info);
-//		printf("%s",out_buffer);
+		out_buffer = emalloc(buffer_len+2048);
+		spprintf(&out_buffer,buffer_len+2048,"%s    %d    %d    %s    %s    %d    %s    %s    %s    %s",host,tv.tv_sec,type,sapi_module.name,filename,error_lineno,get_active_class_name(NULL),get_active_function_name(),err_buffer,VGTRK_BR_G(web_info));
 		sendto(VGTRK_BR_G(sockfd),out_buffer,strlen(out_buffer),0,(struct sockaddr *)&VGTRK_BR_G(servaddr),sizeof(VGTRK_BR_G(servaddr)));
 		efree(err_buffer);
 		efree(out_buffer);
 	}
-	VGTRK_BR_G(old_error_cb)(type,filename,error_lineno,format,args);
 	return;
 }
+
+void vgtrk_sender (int type, const char* filename, const uint error_lineno, const char* format, va_list args)
+{
+        char * err_buffer;
+        char * out_buffer;
+        int buffer_len;
+        TSRMLS_FETCH();
+
+        if (VGTRK_BR_G(strong_paranoia)){
+                char host[255];
+                gethostname(host,255);
+                struct timeval tv;
+                gettimeofday(&tv,NULL);
+                err_buffer = emalloc(PG(log_errors_max_len));
+                buffer_len = vspprintf(&err_buffer,PG(log_errors_max_len),format,args);
+                out_buffer = emalloc(buffer_len+2048);
+                spprintf(&out_buffer,buffer_len+2048,"%s    %d    %d    paranoid-%s    %s    %d    %s    %s    %s    %s",host,tv.tv_sec,type,sapi_module.name,filename,error_lineno,get_active_class_name(NULL),get_active_function_name(),err_buffer,VGTRK_BR_G(web_info));
+                sendto(VGTRK_BR_G(sockfd),out_buffer,strlen(out_buffer),0,(struct sockaddr *)&VGTRK_BR_G(servaddr),sizeof(VGTRK_BR_G(servaddr)));
+                efree(err_buffer);
+                efree(out_buffer);
+        }
+        return;
+}
+
+

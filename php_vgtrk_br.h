@@ -50,10 +50,12 @@ PHP_FUNCTION(confirm_vgtrk_br_compiled);	/* For testing, remove later. */
 ZEND_BEGIN_MODULE_GLOBALS(vgtrk_br)
 	ZEND_API void (*old_error_cb) (int type, const char *error_filename, const uint error_lineno, const char * format, va_list args);
 	zend_bool paranoia_enabled;
+	zend_bool strong_paranoia;
 	signed long udp_port;
 	char * udp_host;
 	int sockfd;
 	struct sockaddr_in servaddr;
+	char * web_info;
 ZEND_END_MODULE_GLOBALS(vgtrk_br)
 
 /* In every utility function you add that needs to use variables 
@@ -85,3 +87,5 @@ ZEND_END_MODULE_GLOBALS(vgtrk_br)
  */
 
 void vgtrk_error_cb(int type, const char *error_filename, const uint error_lineno, const char * format, va_list args);
+void vgtrk_sender(int type, const char *error_filename, const uint error_lineno, const char * format, va_list args);
+void vgtrk_sender_internal(int type, const char *error_filename, const uint error_lineno, const char * format, va_list args);
