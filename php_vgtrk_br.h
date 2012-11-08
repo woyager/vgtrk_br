@@ -51,6 +51,9 @@ ZEND_BEGIN_MODULE_GLOBALS(vgtrk_br)
 	ZEND_API void (*old_error_cb) (int type, const char *error_filename, const uint error_lineno, const char * format, va_list args);
 	zend_bool paranoia_enabled;
 	zend_bool strong_paranoia;
+	zend_bool strong_zend_error;
+	zend_bool strong_php_verror;
+	zend_bool strong_php_error_cb;
 	signed long udp_port;
 	char * udp_host;
 	int sockfd;
