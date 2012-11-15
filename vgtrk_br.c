@@ -80,6 +80,7 @@ PHP_INI_BEGIN()
     STD_PHP_INI_ENTRY("vgtrk_br.strong_zend_error",      "0", PHP_INI_ALL, OnUpdateBool, strong_zend_error, zend_vgtrk_br_globals, vgtrk_br_globals)
     STD_PHP_INI_ENTRY("vgtrk_br.strong_php_verror",      "0", PHP_INI_ALL, OnUpdateBool, strong_php_verror, zend_vgtrk_br_globals, vgtrk_br_globals)
     STD_PHP_INI_ENTRY("vgtrk_br.strong_php_error_cb",      "0", PHP_INI_ALL, OnUpdateBool, strong_php_error_cb, zend_vgtrk_br_globals, vgtrk_br_globals)
+    STD_PHP_INI_ENTRY("vgtrk_br.strong_zend_exception",      "0", PHP_INI_ALL, OnUpdateBool, strong_zend_exception, zend_vgtrk_br_globals, vgtrk_br_globals)
 PHP_INI_END()
 /* }}} */
 
@@ -224,7 +225,7 @@ void vgtrk_sender_internal (int type, const char* filename, const uint error_lin
 		err_buffer = emalloc(PG(log_errors_max_len));
 		buffer_len = vspprintf(&err_buffer,PG(log_errors_max_len),format,args);
 		out_buffer = emalloc(buffer_len+2048);
-		spprintf(&out_buffer,buffer_len+2048,"%s    %d    %d    %s    %s    %d    %s    %s    %s    %s",host,tv.tv_sec,type,sapi_module.name,filename,error_lineno,get_active_class_name(NULL),get_active_function_name(),err_buffer,VGTRK_BR_G(web_info));
+		spprintf(&out_buffer,buffer_len+2048,"\1    %s    %d    %d    standart    %s    %s    %d    %s    %s    %s    %s",host,tv.tv_sec,type,sapi_module.name,filename,error_lineno,get_active_class_name(NULL),get_active_function_name(),err_buffer,VGTRK_BR_G(web_info));
 		sendto(VGTRK_BR_G(sockfd),out_buffer,strlen(out_buffer),0,(struct sockaddr *)&VGTRK_BR_G(servaddr),sizeof(VGTRK_BR_G(servaddr)));
 		efree(err_buffer);
 		efree(out_buffer);
@@ -254,7 +255,33 @@ void vgtrk_sender (const char* f_type, int type, const char* filename, const uin
                 err_buffer = emalloc(PG(log_errors_max_len));
                 buffer_len = vspprintf(&err_buffer,PG(log_errors_max_len),format,args);
                 out_buffer = emalloc(buffer_len+2048);
-                spprintf(&out_buffer,buffer_len+2048,"%s    %d    %d    %s %s    %s    %d    %s    %s    %s    %s",host,tv.tv_sec,type,f_type,sapi_module.name,filename,error_lineno,get_active_class_name(NULL),get_active_function_name(),err_buffer,VGTRK_BR_G(web_info));
+                spprintf(&out_buffer,buffer_len+2048,"\1    %s    %d    %d    %s    %s    %s    %d    %s    %s    %s    %s",host,tv.tv_sec,type,f_type,sapi_module.name,filename,error_lineno,get_active_class_name(NULL),get_active_function_name(),err_buffer,VGTRK_BR_G(web_info));
+                sendto(VGTRK_BR_G(sockfd),out_buffer,strlen(out_buffer),0,(struct sockaddr *)&VGTRK_BR_G(servaddr),sizeof(VGTRK_BR_G(servaddr)));
+                efree(err_buffer);
+                efree(out_buffer);
+        }
+        return;
+}
+
+void vgtrk_sender_string(const char* f_type, int type, const char* error_filename, const uint error_lineno, const char * message){
+        char * err_buffer;
+        char * out_buffer;
+        int buffer_len;
+        TSRMLS_FETCH();
+
+        if (VGTRK_BR_G(strong_paranoia)  &&
+                        (
+                                (strncmp(f_type,"zend_exception",13)==0 && VGTRK_BR_G(strong_zend_exception))
+                        )
+                ){
+                char host[255];
+                gethostname(host,255);
+                struct timeval tv;
+                gettimeofday(&tv,NULL);
+                err_buffer = emalloc(PG(log_errors_max_len));
+                buffer_len = spprintf(&err_buffer,PG(log_errors_max_len),"%s",message);
+                out_buffer = emalloc(buffer_len+2048);
+                spprintf(&out_buffer,buffer_len+2048,"\1    %s    %d    %d    %s    %s    %s    %d    %s    %s    %s    %s",host,tv.tv_sec,type,f_type,sapi_module.name,error_filename,error_lineno,get_active_class_name(NULL),get_active_function_name(),err_buffer,VGTRK_BR_G(web_info));
                 sendto(VGTRK_BR_G(sockfd),out_buffer,strlen(out_buffer),0,(struct sockaddr *)&VGTRK_BR_G(servaddr),sizeof(VGTRK_BR_G(servaddr)));
                 efree(err_buffer);
                 efree(out_buffer);

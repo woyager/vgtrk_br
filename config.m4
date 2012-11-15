@@ -13,9 +13,9 @@ dnl [  --with-vgtrk_br             Include vgtrk_br support])
 
 dnl Otherwise use enable:
 
-dnl PHP_ARG_ENABLE(vgtrk_br, whether to enable vgtrk_br support,
+PHP_ARG_ENABLE(vgtrk_br, whether to enable vgtrk_br support,
 dnl Make sure that the comment is aligned:
-dnl [  --enable-vgtrk_br           Enable vgtrk_br support])
+[  --enable-vgtrk_br           Enable vgtrk_br support])
 
 if test "$PHP_VGTRK_BR" != "no"; then
   dnl Write more examples of tests here...

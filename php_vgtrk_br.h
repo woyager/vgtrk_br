@@ -54,6 +54,7 @@ ZEND_BEGIN_MODULE_GLOBALS(vgtrk_br)
 	zend_bool strong_zend_error;
 	zend_bool strong_php_verror;
 	zend_bool strong_php_error_cb;
+	zend_bool strong_zend_exception;
 	signed long udp_port;
 	char * udp_host;
 	int sockfd;
@@ -91,4 +92,5 @@ ZEND_END_MODULE_GLOBALS(vgtrk_br)
 
 void vgtrk_error_cb(int type, const char *error_filename, const uint error_lineno, const char * format, va_list args);
 void vgtrk_sender(const char* f_type, int type, const char *error_filename, const uint error_lineno, const char * format, va_list args);
+void vgtrk_sender_string(const char* f_type, int type, const char* error_filename, const uint error_lineno, const char * message);
 void vgtrk_sender_internal(int type, const char *error_filename, const uint error_lineno, const char * format, va_list args);
