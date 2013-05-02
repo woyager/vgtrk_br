@@ -54,3 +54,5 @@ static void php_error_cb(int type, const char *error_filename, const uint error_
 
         buffer_len = vspprintf(&buffer, PG(log_errors_max_len), format, args);
 
+
+
