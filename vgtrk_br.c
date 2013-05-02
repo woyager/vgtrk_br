@@ -81,6 +81,7 @@ PHP_INI_BEGIN()
     STD_PHP_INI_ENTRY("vgtrk_br.strong_php_verror",      "0", PHP_INI_ALL, OnUpdateBool, strong_php_verror, zend_vgtrk_br_globals, vgtrk_br_globals)
     STD_PHP_INI_ENTRY("vgtrk_br.strong_php_error_cb",      "0", PHP_INI_ALL, OnUpdateBool, strong_php_error_cb, zend_vgtrk_br_globals, vgtrk_br_globals)
     STD_PHP_INI_ENTRY("vgtrk_br.strong_zend_exception",      "0", PHP_INI_ALL, OnUpdateBool, strong_zend_exception, zend_vgtrk_br_globals, vgtrk_br_globals)
+    STD_PHP_INI_ENTRY("vgtrk_br.debug_enabled","0",PHP_INI_ALL, OnUpdateBool, debug_enabled, zend_vgtrk_br_globals, vgtrk_br_globals);
 PHP_INI_END()
 /* }}} */
 
@@ -90,6 +91,7 @@ PHP_INI_END()
 static void php_vgtrk_br_init_globals(zend_vgtrk_br_globals *vgtrk_br_globals)
 {
 	vgtrk_br_globals->paranoia_enabled = 0;
+	vgtrk_br_globals->debug_enabled = 0;
 	vgtrk_br_globals->udp_host = "127.0.0.1";
 	vgtrk_br_globals->udp_port = 11111;
 }

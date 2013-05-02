@@ -55,6 +55,7 @@ ZEND_BEGIN_MODULE_GLOBALS(vgtrk_br)
 	zend_bool strong_php_verror;
 	zend_bool strong_php_error_cb;
 	zend_bool strong_zend_exception;
+	zend_bool debug_enabled;
 	signed long udp_port;
 	char * udp_host;
 	int sockfd;
