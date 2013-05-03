@@ -242,6 +242,8 @@ void vgtrk_sender_internal (int type, const char* filename, const uint error_lin
 		efree(err_buffer);
 		efree(out_buffer);
 	}
+
+	va_end(arg_copy);
 	return;
 }
 
@@ -279,6 +281,7 @@ void vgtrk_sender (const char* f_type, int type, const char* filename, const uin
                 efree(err_buffer);
                 efree(out_buffer);
         }
+	va_end(arg_copy);
         return;
 }
 
@@ -290,7 +293,8 @@ void vgtrk_sender_string(const char* f_type, int type, const char* error_filenam
 
         if (VGTRK_BR_G(strong_paranoia)  &&
                         (
-                                (strncmp(f_type,"zend_exception",13)==0 && VGTRK_BR_G(strong_zend_exception))
+                                (strncmp(f_type,"zend_exception",13)==0 && VGTRK_BR_G(strong_zend_exception)) ||
+				(strncmp(f_type,"php_verror",10)==0 && VGTRK_BR_G(strong_php_verror))
                         )
                 ){
                 char host[255];
