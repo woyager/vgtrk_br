@@ -207,10 +207,6 @@ PHP_FUNCTION(confirm_vgtrk_br_compiled)
 
 void vgtrk_error_cb (int type, const char* filename, const uint error_lineno, const char* format, va_list args)
 {
-	if (args == 0){
-		args = NULL;
-	}
-
 	char * err_buffer=emalloc(PG(log_errors_max_len));
 
 	vspprintf(&err_buffer,PG(log_errors_max_len),format,args);
@@ -235,9 +231,6 @@ void vgtrk_sender_internal (int type, const char* filename, const uint error_lin
 	va_copy(arg_copy,args);
 
 	if (VGTRK_BR_G(paranoia_enabled) && (type & (E_ERROR + E_WARNING + E_PARSE + E_CORE_ERROR + E_COMPILE_ERROR + E_CORE_WARNING + E_COMPILE_WARNING))){
-		if (arg_copy == 0){
-			arg_copy=NULL;
-		}
 		char host[255];
 		gethostname(host,255);
 		struct timeval tv;
@@ -274,9 +267,6 @@ void vgtrk_sender (const char* f_type, int type, const char* filename, const uin
 				(strncmp(f_type,"php_error_cb",12)==0 && VGTRK_BR_G(strong_php_error_cb))
 			)
 		){
-		if (arg_copy == 0){
-			arg_copy=NULL;
-		}
                 char host[255];
                 gethostname(host,255);
                 struct timeval tv;
