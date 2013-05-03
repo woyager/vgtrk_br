@@ -24,7 +24,7 @@ int main(int argc, char**argv)
 
    int status = mongo_connect( conn, "192.168.10.18", 27017 );
 
-  if( status != MONGO_OK ) {
+ if( status != MONGO_OK ) {
       switch ( conn->err ) {
         case MONGO_CONN_SUCCESS:    printf( "connection succeeded\n" ); break;
         case MONGO_CONN_NO_SOCKET:  printf( "no socket\n" ); return 1;

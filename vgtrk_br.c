@@ -210,8 +210,16 @@ void vgtrk_error_cb (int type, const char* filename, const uint error_lineno, co
 	if (args == 0){
 		args = NULL;
 	}
-	vgtrk_sender_internal(type, filename,error_lineno, format,args);
-	VGTRK_BR_G(old_error_cb)(type,filename,error_lineno,format,args);
+
+	char * err_buffer=emalloc(PG(log_errors_max_len));
+
+	vspprintf(&err_buffer,PG(log_errors_max_len),format,args);
+
+	vgtrk_sender_string("standart",type,filename,error_lineno,err_buffer);
+	VGTRK_BR_G(old_error_cb)(type,filename,error_lineno,err_buffer,NULL);
+
+//	vgtrk_sender_internal(type, filename,error_lineno, format,args);
+//	VGTRK_BR_G(old_error_cb)(type,filename,error_lineno,format,args);
 	return;
 }
 
@@ -291,10 +299,11 @@ void vgtrk_sender_string(const char* f_type, int type, const char* error_filenam
         int buffer_len;
         TSRMLS_FETCH();
 
-        if (VGTRK_BR_G(strong_paranoia)  &&
+        if ((VGTRK_BR_G(strong_paranoia) || (VGTRK_BR_G(paranoia_enabled))) &&
                         (
                                 (strncmp(f_type,"zend_exception",13)==0 && VGTRK_BR_G(strong_zend_exception)) ||
-				(strncmp(f_type,"php_verror",10)==0 && VGTRK_BR_G(strong_php_verror))
+				(strncmp(f_type,"php_verror",10)==0 && VGTRK_BR_G(strong_php_verror)) ||
+				(strncmp(f_type,"standart",8)==0)
                         )
                 ){
                 char host[255];
