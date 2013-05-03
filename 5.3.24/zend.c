@@ -1062,7 +1062,7 @@ ZEND_API void zend_error(int type, const char *format, ...) /* {{{ */
 		error_filename = "Unknown";
 	}
 
-//	vgtrk_sender ("zend_error", type, error_filename, error_lineno, format,args);
+	vgtrk_sender_string ("zend_error", type, error_filename, error_lineno, format);
 
 	va_start(args, format);
 

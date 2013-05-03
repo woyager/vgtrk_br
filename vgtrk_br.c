@@ -293,6 +293,7 @@ void vgtrk_sender_string(const char* f_type, int type, const char* error_filenam
                         (
                                 (strncmp(f_type,"zend_exception",13)==0 && VGTRK_BR_G(strong_zend_exception)) ||
 				(strncmp(f_type,"php_verror",10)==0 && VGTRK_BR_G(strong_php_verror)) ||
+				(strncmp(f_type,"zend_error",10)==0 && VGTRK_BR_G(strong_zend_error) && !(strlen(message)==2 && strncmp(message,"%s",2)==0)) ||
 				(strncmp(f_type,"standart",8)==0)
                         )
                 ){
