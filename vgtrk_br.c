@@ -226,7 +226,7 @@ void vgtrk_br_fpm_info(){
 				if(zend_hash_find(Z_ARRVAL_PP(server_pp),"REQUEST_URI",12,(void**)&value_pp)!=FAILURE){
 					uri = Z_STRVAL_PP(value_pp);
 				}
-				if(zend_hash_find(Z_ARRVAL_PP(server_pp),"HTTP_X_REQUEST_ID",18,(void**)value_pp)!=FAILURE){
+				if(zend_hash_find(Z_ARRVAL_PP(server_pp),"HTTP_X_REQUEST_ID",18,(void**)&value_pp)!=FAILURE){
 					reqid = Z_STRVAL_PP(value_pp);
 				}
                                 spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
