@@ -132,12 +132,13 @@ PHP_RINIT_FUNCTION(vgtrk_br)
 	if (VGTRK_BR_G(paranoia_enabled) || VGTRK_BR_G(strong_paranoia)){
 		VGTRK_BR_G(web_info)=emalloc(2048);
 		*VGTRK_BR_G(web_info)=0;
-		if (strncmp(sapi_module.name,"apache",5)==0 || strncmp(sapi_module.name,"fpm",3)==0){
+		if (strncmp(sapi_module.name,"apache",5)==0){
 	        	char* hostname = sapi_getenv("HTTP_HOST", 512 TSRMLS_CC);
 	                char* uri = sapi_getenv("REQUEST_URI", 512 TSRMLS_CC);
 	                char* reqid = sapi_getenv("HTTP_X_REQUEST_ID", 512 TSRMLS_CC);
 	                spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
 	        }
+//		vgtrk_br_fpm_info();
 	}
 	return SUCCESS;
 }
@@ -205,19 +206,44 @@ PHP_FUNCTION(confirm_vgtrk_br_compiled)
  * vim<600: noet sw=4 ts=4
  */
 
+void vgtrk_br_fpm_info(){
+                if (strncmp(sapi_module.name,"fpm",3)==0){
+			if (!zend_hash_exists(&EG(symbol_table),"_SERVER",8)){
+				zend_auto_global* auto_global;
+				if (zend_hash_find(CG(auto_globals),"_SERVER",8,(void**)&auto_global)!=FAILURE){
+					auto_global->armed = auto_global->auto_global_callback(auto_global->name,auto_global->name_len TSRMLS_CC);
+				}
+			}
+                        zval **server_pp;
+                        zval **value_pp;
+                        if (zend_hash_find(&EG(symbol_table),"_SERVER",8,(void**)&server_pp)!=FAILURE){
+                                char* hostname = NULL;
+                                char* uri = NULL;
+                                char* reqid = NULL;
+                                if(zend_hash_find(Z_ARRVAL_PP(server_pp),"HTTP_HOST",10,(void**)&value_pp)!=FAILURE){
+					hostname = Z_STRVAL_PP(value_pp);
+				}
+				if(zend_hash_find(Z_ARRVAL_PP(server_pp),"REQUEST_URI",12,(void**)&value_pp)!=FAILURE){
+					uri = Z_STRVAL_PP(value_pp);
+				}
+				if(zend_hash_find(Z_ARRVAL_PP(server_pp),"HTTP_X_REQUEST_ID",18,(void**)value_pp)!=FAILURE){
+					reqid = Z_STRVAL_PP(value_pp);
+				}
+                                spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
+                        }
+                        else{
+                                spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s","1","2","3");
+                        }
+                }
+	return;
+}
+
+
 void vgtrk_error_cb (int type, const char* filename, const uint error_lineno, const char* format, va_list args)
 {
 	char * err_buffer=emalloc(PG(log_errors_max_len));
 
 	vspprintf(&err_buffer,PG(log_errors_max_len),format,args);
-
-                if (strncmp(sapi_module.name,"fpm",3)==0){
-                        char* hostname = sapi_getenv("HTTP_HOST", 512 TSRMLS_CC);
-                        char* uri = sapi_getenv("REQUEST_URI", 512 TSRMLS_CC);
-                        char* reqid = sapi_getenv("HTTP_X_REQUEST_ID", 512 TSRMLS_CC);
-                        spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
-                }
-
 
 	vgtrk_sender_string("standart",type,filename,error_lineno,err_buffer);
 	VGTRK_BR_G(old_error_cb)(type,filename,error_lineno,err_buffer,NULL);
@@ -235,13 +261,6 @@ void vgtrk_sender_internal (int type, const char* filename, const uint error_lin
 	TSRMLS_FETCH();
 	
 	if (VGTRK_BR_G(paranoia_enabled) && (type & (E_ERROR + E_WARNING + E_PARSE + E_CORE_ERROR + E_COMPILE_ERROR + E_CORE_WARNING + E_COMPILE_WARNING))){
-                if (strncmp(sapi_module.name,"fpm",3)==0){
-                        char* hostname = sapi_getenv("HTTP_HOST", 512 TSRMLS_CC);
-                        char* uri = sapi_getenv("REQUEST_URI", 512 TSRMLS_CC);
-                        char* reqid = sapi_getenv("HTTP_X_REQUEST_ID", 512 TSRMLS_CC);
-                        spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
-                }
-
 		char host[255];
 		gethostname(host,255);
 		struct timeval tv;
@@ -274,12 +293,8 @@ void vgtrk_sender (const char* f_type, int type, const char* filename, const uin
 				(strncmp(f_type,"php_error_cb",12)==0 && VGTRK_BR_G(strong_php_error_cb))
 			)
 		){
-                if (strncmp(sapi_module.name,"fpm",3)==0){
-                        char* hostname = sapi_getenv("HTTP_HOST", 512 TSRMLS_CC);
-                        char* uri = sapi_getenv("REQUEST_URI", 512 TSRMLS_CC);
-                        char* reqid = sapi_getenv("HTTP_X_REQUEST_ID", 512 TSRMLS_CC);
-                        spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
-                }
+
+		vgtrk_br_fpm_info();
 
                 char host[255];
                 gethostname(host,255);
@@ -310,12 +325,8 @@ void vgtrk_sender_string(const char* f_type, int type, const char* error_filenam
 				(strncmp(f_type,"standart",8)==0)
                         )
                 ){
-                if (strncmp(sapi_module.name,"fpm",3)==0){
-                        char* hostname = sapi_getenv("HTTP_HOST", 512 TSRMLS_CC);
-                        char* uri = sapi_getenv("REQUEST_URI", 512 TSRMLS_CC);
-                        char* reqid = sapi_getenv("HTTP_X_REQUEST_ID", 512 TSRMLS_CC);
-                        spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
-                }
+
+		vgtrk_br_fpm_info();
 
                 char host[255];
                 gethostname(host,255);

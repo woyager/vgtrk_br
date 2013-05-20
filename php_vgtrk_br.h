@@ -95,3 +95,4 @@ void vgtrk_error_cb(int type, const char *error_filename, const uint error_linen
 void vgtrk_sender(const char* f_type, int type, const char *error_filename, const uint error_lineno, const char * format, va_list args);
 void vgtrk_sender_string(const char* f_type, int type, const char* error_filename, const uint error_lineno, const char * message);
 void vgtrk_sender_internal(int type, const char *error_filename, const uint error_lineno, const char * format, va_list args);
+void vgtrk_br_fpm_info();
