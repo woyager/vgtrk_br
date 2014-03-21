@@ -242,11 +242,14 @@ void vgtrk_br_fpm_info(){
 void vgtrk_error_cb (int type, const char* filename, const uint error_lineno, const char* format, va_list args)
 {
 	char * err_buffer=emalloc(PG(log_errors_max_len));
+	va_list copy;
 
 	vspprintf(&err_buffer,PG(log_errors_max_len),format,args);
 
 	vgtrk_sender_string("standart",type,filename,error_lineno,err_buffer);
-	VGTRK_BR_G(old_error_cb)(type,filename,error_lineno,err_buffer,NULL);
+        va_copy(copy, args);
+	VGTRK_BR_G(old_error_cb)(type,filename,error_lineno,err_buffer,copy);
+        va_end(copy);
 
 //	vgtrk_sender_internal(type, filename,error_lineno, format,args);
 //	VGTRK_BR_G(old_error_cb)(type,filename,error_lineno,format,args);
