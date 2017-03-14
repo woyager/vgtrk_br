@@ -138,6 +138,12 @@ PHP_RINIT_FUNCTION(vgtrk_br)
 	                char* reqid = sapi_getenv("HTTP_X_REQUEST_ID", 512 TSRMLS_CC);
 	                spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
 	        }
+		if (strncmp(sapi_module.name,"fpm",3)==0){
+			char* hostname = sapi_cgibin_getenv("HTTP_HOST", 512 TSRMLS_CC);
+	                char* uri = sapi_cgibin_getenv("REQUEST_URI", 512 TSRMLS_CC);
+	                char* reqid = sapi_cgibin_getenv("HTTP_X_REQUEST_ID", 512 TSRMLS_CC);
+	                spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
+		}
 //		vgtrk_br_fpm_info();
 	}
 	return SUCCESS;
@@ -301,7 +307,7 @@ void vgtrk_sender (const char* f_type, int type, const char* filename, const uin
 			)
 		){
 
-		vgtrk_br_fpm_info();
+//		vgtrk_br_fpm_info();
 
                 char host[255];
                 gethostname(host,255);
@@ -334,7 +340,7 @@ void vgtrk_sender_string(const char* f_type, int type, const char* error_filenam
                         )
                 ){
 
-		vgtrk_br_fpm_info();
+//		vgtrk_br_fpm_info();
 
                 char host[255];
                 gethostname(host,255);
