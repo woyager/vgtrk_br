@@ -266,7 +266,7 @@ void vgtrk_sender_internal (int type, const char* filename, const uint error_lin
 	const char *space = "";
 	TSRMLS_FETCH();
 	
-	if (VGTRK_BR_G(paranoia_enabled) && (type & (E_ERROR + E_WARNING + E_PARSE + E_CORE_ERROR + E_COMPILE_ERROR + E_CORE_WARNING + E_COMPILE_WARNING))){
+	if (VGTRK_BR_G(paranoia_enabled) && (type & (E_ERROR + E_WARNING + E_PARSE + E_CORE_ERROR + E_COMPILE_ERROR + E_CORE_WARNING + E_COMPILE_WARNING  + E_USER_WARNING + E_USER_ERROR))){
 		char host[255];
 		gethostname(host,255);
 		struct timeval tv;
@@ -293,7 +293,7 @@ void vgtrk_sender (const char* f_type, int type, const char* filename, const uin
 
 
         if (VGTRK_BR_G(strong_paranoia)  && 
-			(type & (E_ERROR + E_WARNING + E_PARSE + E_CORE_ERROR + E_COMPILE_ERROR + E_CORE_WARNING + E_COMPILE_WARNING)) && 
+			(type & (E_ERROR + E_WARNING + E_PARSE + E_CORE_ERROR + E_COMPILE_ERROR + E_CORE_WARNING + E_COMPILE_WARNING + E_USER_WARNING + E_USER_ERROR)) && 
 			(
 				(strncmp(f_type,"zend_error",10)==0 && VGTRK_BR_G(strong_zend_error)) ||
 				(strncmp(f_type,"php_verror",10)==0 && VGTRK_BR_G(strong_php_verror)) ||
