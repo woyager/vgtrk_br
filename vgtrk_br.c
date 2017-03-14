@@ -207,6 +207,7 @@ PHP_FUNCTION(confirm_vgtrk_br_compiled)
  */
 
 void vgtrk_br_fpm_info(){
+#ifdef FPM_H
                 if (strncmp(sapi_module.name,"fpm",3)==0){
 			if (!zend_hash_exists(&EG(symbol_table),"_SERVER",8)){
 				zend_auto_global* auto_global;
@@ -235,22 +236,17 @@ void vgtrk_br_fpm_info(){
                                 spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s","1","2","3");
                         }
                 }
-                if (strncmp(sapi_module.name,"apache",5)==0){
-                        char* hostname = sapi_getenv("HTTP_HOST", 512 TSRMLS_CC);
-                        char* uri = sapi_getenv("REQUEST_URI", 512 TSRMLS_CC);
-                        char* reqid = sapi_getenv("HTTP_X_REQUEST_ID", 512 TSRMLS_CC);
-                        spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
-                }
+#endif
 	return;
 }
 
 
 void vgtrk_error_cb (int type, const char* filename, const uint error_lineno, const char* format, va_list args)
 {
-	char * err_buffer=emalloc(PG(log_errors_max_len));
+	char * err_buffer=emalloc(4096);
 	va_list copy;
 
-	vspprintf(&err_buffer,PG(log_errors_max_len),format,args);
+	vspprintf(&err_buffer,4096,format,args);
 
 	vgtrk_sender_string("standart",type,filename,error_lineno,err_buffer);
         va_copy(copy, args);
@@ -267,17 +263,18 @@ void vgtrk_sender_internal (int type, const char* filename, const uint error_lin
 	char * err_buffer;
 	char * out_buffer;
 	int buffer_len;
+	const char *space = "";
 	TSRMLS_FETCH();
 	
-	if (VGTRK_BR_G(paranoia_enabled) && (type & (E_ERROR + E_WARNING + E_PARSE + E_CORE_ERROR + E_COMPILE_ERROR + E_CORE_WARNING + E_COMPILE_WARNING + E_USER_WARNING + E_USER_ERROR))){
+	if (VGTRK_BR_G(paranoia_enabled) && (type & (E_ERROR + E_WARNING + E_PARSE + E_CORE_ERROR + E_COMPILE_ERROR + E_CORE_WARNING + E_COMPILE_WARNING))){
 		char host[255];
 		gethostname(host,255);
 		struct timeval tv;
 		gettimeofday(&tv,NULL);
-		err_buffer = emalloc(PG(log_errors_max_len));
-		buffer_len = vspprintf(&err_buffer,PG(log_errors_max_len),format,args);
+		err_buffer = emalloc(4096);
+		buffer_len = vspprintf(&err_buffer,4096,format,args);
 		out_buffer = emalloc(buffer_len+2048);
-		spprintf(&out_buffer,buffer_len+2048,"\1    %s    %d    %d    standart    %s    %s    %d    %s    %s    %s    %s",host,tv.tv_sec,type,sapi_module.name,filename,error_lineno,get_active_class_name(NULL),get_active_function_name(),err_buffer,VGTRK_BR_G(web_info));
+		spprintf(&out_buffer,buffer_len+2048,"\1    %s    %d    %d    standart    %s    %s    %d    %s    %s    %s    %s",host,(int)tv.tv_sec,type,sapi_module.name,filename,error_lineno,get_active_class_name(&space TSRMLS_CC),get_active_function_name(TSRMLS_C),err_buffer,VGTRK_BR_G(web_info));
 		sendto(VGTRK_BR_G(sockfd),out_buffer,strlen(out_buffer),0,(struct sockaddr *)&VGTRK_BR_G(servaddr),sizeof(VGTRK_BR_G(servaddr)));
 		efree(err_buffer);
 		efree(out_buffer);
@@ -291,11 +288,12 @@ void vgtrk_sender (const char* f_type, int type, const char* filename, const uin
         char * err_buffer;
         char * out_buffer;
         int buffer_len;
+	const char *space = "";
         TSRMLS_FETCH();
 
 
         if (VGTRK_BR_G(strong_paranoia)  && 
-			(type & (E_ERROR + E_WARNING + E_PARSE + E_CORE_ERROR + E_COMPILE_ERROR + E_CORE_WARNING + E_COMPILE_WARNING + E_USER_WARNING + E_USER_ERROR)) && 
+			(type & (E_ERROR + E_WARNING + E_PARSE + E_CORE_ERROR + E_COMPILE_ERROR + E_CORE_WARNING + E_COMPILE_WARNING)) && 
 			(
 				(strncmp(f_type,"zend_error",10)==0 && VGTRK_BR_G(strong_zend_error)) ||
 				(strncmp(f_type,"php_verror",10)==0 && VGTRK_BR_G(strong_php_verror)) ||
@@ -309,10 +307,10 @@ void vgtrk_sender (const char* f_type, int type, const char* filename, const uin
                 gethostname(host,255);
                 struct timeval tv;
                 gettimeofday(&tv,NULL);
-                err_buffer = emalloc(PG(log_errors_max_len));
-                buffer_len = vspprintf(&err_buffer,PG(log_errors_max_len),format,args);
+                err_buffer = emalloc(4096);
+                buffer_len = vspprintf(&err_buffer,4096,format,args);
                 out_buffer = emalloc(buffer_len+2048);
-                spprintf(&out_buffer,buffer_len+2048,"\1    %s    %d    %d    %s    %s    %s    %d    %s    %s    %s    %s",host,tv.tv_sec,type,f_type,sapi_module.name,filename,error_lineno,get_active_class_name(NULL),get_active_function_name(),err_buffer,VGTRK_BR_G(web_info));
+                spprintf(&out_buffer,buffer_len+2048,"\1    %s    %d    %d    %s    %s    %s    %d    %s    %s    %s    %s",host,(int)tv.tv_sec,type,f_type,sapi_module.name,filename,error_lineno,get_active_class_name(&space TSRMLS_CC),get_active_function_name(TSRMLS_C),err_buffer,VGTRK_BR_G(web_info));
                 sendto(VGTRK_BR_G(sockfd),out_buffer,strlen(out_buffer),0,(struct sockaddr *)&VGTRK_BR_G(servaddr),sizeof(VGTRK_BR_G(servaddr)));
                 efree(err_buffer);
                 efree(out_buffer);
@@ -324,6 +322,7 @@ void vgtrk_sender_string(const char* f_type, int type, const char* error_filenam
         char * err_buffer;
         char * out_buffer;
         int buffer_len;
+	const char *space = "";
         TSRMLS_FETCH();
 
         if ((VGTRK_BR_G(strong_paranoia) || (VGTRK_BR_G(paranoia_enabled))) &&
@@ -341,10 +340,10 @@ void vgtrk_sender_string(const char* f_type, int type, const char* error_filenam
                 gethostname(host,255);
                 struct timeval tv;
                 gettimeofday(&tv,NULL);
-                err_buffer = emalloc(PG(log_errors_max_len));
-                buffer_len = spprintf(&err_buffer,PG(log_errors_max_len),"%s",message);
+                err_buffer = emalloc(4096);
+                buffer_len = spprintf(&err_buffer,4096,"%s",message);
                 out_buffer = emalloc(buffer_len+2048);
-                spprintf(&out_buffer,buffer_len+2048,"\1    %s    %d    %d    %s    %s    %s    %d    %s    %s    %s    %s",host,tv.tv_sec,type,f_type,sapi_module.name,error_filename,error_lineno,get_active_class_name(NULL),get_active_function_name(),err_buffer,VGTRK_BR_G(web_info));
+                spprintf(&out_buffer,buffer_len+2048,"\1    %s    %d    %d    %s    %s    %s    %d    %s    %s    %s    %s",host,(int)tv.tv_sec,type,f_type,sapi_module.name,error_filename,error_lineno,get_active_class_name(&space TSRMLS_CC),get_active_function_name(TSRMLS_C),err_buffer,VGTRK_BR_G(web_info));
                 sendto(VGTRK_BR_G(sockfd),out_buffer,strlen(out_buffer),0,(struct sockaddr *)&VGTRK_BR_G(servaddr),sizeof(VGTRK_BR_G(servaddr)));
                 efree(err_buffer);
                 efree(out_buffer);
