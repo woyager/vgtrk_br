@@ -138,14 +138,38 @@ PHP_RINIT_FUNCTION(vgtrk_br)
 	                char* reqid = sapi_getenv("HTTP_X_REQUEST_ID", 512 TSRMLS_CC);
 	                spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
 	        }
-#ifdef FPM_H
 		if (strncmp(sapi_module.name,"fpm",3)==0){
-			char* hostname = sapi_cgibin_getenv("HTTP_HOST", 512 TSRMLS_CC);
-	                char* uri = sapi_cgibin_getenv("REQUEST_URI", 512 TSRMLS_CC);
-	                char* reqid = sapi_cgibin_getenv("HTTP_X_REQUEST_ID", 512 TSRMLS_CC);
-	                spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
+//			char* hostname = sapi_module.getenv("HTTP_HOST", 512 TSRMLS_CC);
+//	                char* uri = sapi_module.getenv("REQUEST_URI", 512 TSRMLS_CC);
+//	                char* reqid = sapi_module.getenv("HTTP_X_REQUEST_ID", 512 TSRMLS_CC);
+//	                spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
+                        if (!zend_hash_exists(&EG(symbol_table),"_SERVER",8)){
+                                zend_auto_global* auto_global;
+                                if (zend_hash_find(CG(auto_globals),"_SERVER",8,(void**)&auto_global)!=FAILURE){
+                                        auto_global->armed = auto_global->auto_global_callback(auto_global->name,auto_global->name_len TSRMLS_CC);
+                                }
+                        }
+                        zval **server_pp;
+                        zval **value_pp;
+                        if (zend_hash_find(&EG(symbol_table),"_SERVER",8,(void**)&server_pp)!=FAILURE){
+                                char* hostname = NULL;
+                                char* uri = NULL;
+                                char* reqid = NULL;
+                                if(zend_hash_find(Z_ARRVAL_PP(server_pp),"HTTP_HOST",10,(void**)&value_pp)!=FAILURE){
+                                        hostname = Z_STRVAL_PP(value_pp);
+                                }
+                                if(zend_hash_find(Z_ARRVAL_PP(server_pp),"REQUEST_URI",12,(void**)&value_pp)!=FAILURE){
+                                        uri = Z_STRVAL_PP(value_pp);
+                                }
+                                if(zend_hash_find(Z_ARRVAL_PP(server_pp),"HTTP_X_REQUEST_ID",18,(void**)&value_pp)!=FAILURE){
+                                        reqid = Z_STRVAL_PP(value_pp);
+                                }
+                                spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
+                        }
+                        else{
+                                spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s","1","2","3");
+                        }
 		}
-#endif
 //		vgtrk_br_fpm_info();
 	}
 	return SUCCESS;
