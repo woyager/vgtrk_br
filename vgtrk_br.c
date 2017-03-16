@@ -143,6 +143,7 @@ PHP_RINIT_FUNCTION(vgtrk_br)
 //	                char* uri = sapi_module.getenv("REQUEST_URI", 512 TSRMLS_CC);
 //	                char* reqid = sapi_module.getenv("HTTP_X_REQUEST_ID", 512 TSRMLS_CC);
 //	                spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
+#if PHP_MAJOR_VERSION < 7
                         if (!zend_hash_exists(&EG(symbol_table),"_SERVER",8)){
                                 zend_auto_global* auto_global;
                                 if (zend_hash_find(CG(auto_globals),"_SERVER",8,(void**)&auto_global)!=FAILURE){
@@ -169,6 +170,27 @@ PHP_RINIT_FUNCTION(vgtrk_br)
                         else{
                                 spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s","1","2","3");
                         }
+#else
+			zval *server_vars, *value;
+			zend_string *server = zend_string_init("_SERVER", sizeof("_SERVER") - 1, 0);
+			zend_is_auto_global(server);
+			if ((server_vars = zend_hash_find(&EG(symbol_table), server)) != NULL && Z_TYPE_P(server_vars) == IS_ARRAY) {
+				char *hostname = NULL;
+				char *uri = NULL;
+				char *reqid = NULL;
+				if ((value = zend_hash_str_find(Z_ARRVAL_P(server_vars), "HTTP_HOST", sizeof("HTTP_HOST")-1)) != NULL && Z_TYPE_P(value) == IS_STRING){
+					hostname = Z_STRVAL_P(value);
+				}
+				if ((value = zend_hash_str_find(Z_ARRVAL_P(server_vars), "REQUEST_URI", sizeof("REQUEST_URI")-1)) != NULL && Z_TYPE_P(value) == IS_STRING){
+					uri = Z_STRVAL_P(value);
+                                }
+				if ((value = zend_hash_str_find(Z_ARRVAL_P(server_vars), "HTTP_X_REQUEST_ID", sizeof("X_REQUEST_ID")-1)) != NULL && Z_TYPE_P(value) == IS_STRING){
+					reqid = Z_STRVAL_P(value);
+                                }
+				spprintf(&(VGTRK_BR_G(web_info)),2048,"%s    %s    %s",reqid,hostname,uri);
+			}
+#endif
+
 		}
 //		vgtrk_br_fpm_info();
 	}
@@ -208,6 +230,7 @@ PHP_MINFO_FUNCTION(vgtrk_br)
 /* Every user-visible function in PHP should document itself in the source */
 /* {{{ proto string confirm_vgtrk_br_compiled(string arg)
    Return a string to confirm that the module is compiled in */
+#if PHP_MAJOR_VERSION < 7
 PHP_FUNCTION(confirm_vgtrk_br_compiled)
 {
 	char *arg = NULL;
@@ -221,6 +244,22 @@ PHP_FUNCTION(confirm_vgtrk_br_compiled)
 	len = spprintf(&strg, 0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "vgtrk_br", arg);
 	RETURN_STRINGL(strg, len, 0);
 }
+#else
+PHP_FUNCTION(confirm_vgtrk_br_compiled)
+{       
+        char *arg = NULL;
+        size_t arg_len, len;
+        zend_string *strg;
+        
+        if (zend_parse_parameters(ZEND_NUM_ARGS(), "s", &arg, &arg_len) == FAILURE) {
+                return;
+        }
+        
+        strg = strpprintf(0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "vgtrk_br", arg);
+        
+        RETURN_STR(strg);
+}
+#endif
 /* }}} */
 /* The previous line is meant for vim and emacs, so it can correctly fold and 
    unfold functions in source code. See the corresponding marks just before 
